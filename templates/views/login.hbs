@@ -1,0 +1,27 @@
+<Html>
+
+<head>
+  <title>
+    Login Page
+  </title>
+</head>
+
+<body bgcolor="LightYellow">
+  {{>navbar}}
+  <br>
+  <br>
+  <form action="/login" method="POST">
+
+    <label> Email: </label>
+    <input type="email" id="email" name="email" /> <br> <br>
+
+
+    <label> Password: </label>
+    <input type="Password" id="pass" name="password"> <br> <br>
+
+    <input type="submit" value="Login" />
+
+  </form>
+</body>
+
+</html>
