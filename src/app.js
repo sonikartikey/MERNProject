@@ -12,7 +12,7 @@ const auth = require("./middleware/auth")
 
 require("./db/conn")
 const app = express()
-const port = process.env.POR || 3000;
+const port = process.env.PORT || 3000;
 
 //this is OKay while using POSTMAN
 app.use(express.json())
