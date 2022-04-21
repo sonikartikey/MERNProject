@@ -5,6 +5,9 @@ const hbs = require('hbs')
 const Register = require('./models/register')
 require("./models/register")
 const bcrypt = require('bcrypt');
+const cookieParser = require('cookie-parser')
+const { cookie } = require('express/lib/response')
+const auth = require("./middleware/auth")
 
 
 require("./db/conn")
@@ -13,6 +16,7 @@ const port = process.env.POR || 3000;
 
 //this is OKay while using POSTMAN
 app.use(express.json())
+app.use(cookieParser())
 
 app.use(express.urlencoded({ extended: false }))
 
@@ -29,14 +33,37 @@ app.set("views", template_Path)
 const partial_Path = path.join(__dirname, "../templates/partials")
 hbs.registerPartials(partial_Path)
 
-console.log(process.env.SECRET_KEY)
+// console.log(process.env.SECRET_KEY)
 
 app.get("", (req, res) => {
   res.render("index")
 })
 
+
+app.get("/secret", auth, (req, res) => {
+  console.log(`here i ma in secret pafge ${req.cookies.jwt}`)
+  res.render("secret")
+})
+
+
 app.get("/register", (req, res) => {
   res.render("register")
+})
+
+app.get("/logout", auth, async(req, res) => {
+  try {
+    //for single logout
+    // req.user.tokens = req.user.tokens.filter((current_token)=>{return current_token.token !== req.token})
+
+    //for all device logitu
+    req.user.tokens = []
+    res.clearCookie('jwt')
+    console.log("Logout")
+    await req.user.save();
+    res.render("login")
+  } catch (err) {
+
+  }
 })
 
 app.get("/login", (req, res) => {
@@ -62,6 +89,12 @@ app.post("/register", async (req, res) => {
       //another use of middleware concept of middle ware(JWT)
       const token = await registerEmployee.generateAuthToken();
 
+      //res.cookie is used to set the cookie name to value
+      res.cookie("jwt", token, {
+        expires: new Date(Date.now() + 20000),
+        httpOnly: true
+      })
+
       const createEmployee = await registerEmployee.save();
       res.status(201).render("index")
       console.log("successfully added ")
@@ -82,18 +115,25 @@ app.post("/login", async (req, res) => {
     const email = req.body.email
     const userPassword = req.body.password
     // console.log(`${email} , ${password}`)
-    const userEmail = await Register.findOne({email:email})
+    const userEmail = await Register.findOne({ email: email })
     const userDatabasePassword = userEmail.password
 
-    const isMatch = await bcrypt.compare(userPassword  , userDatabasePassword)
+    const isMatch = await bcrypt.compare(userPassword, userDatabasePassword)
 
     const token = await userEmail.generateAuthToken();
+    //res.cookie is used to set the cookie name to value
+    res.cookie("jwt", token, {
+      expires: new Date(Date.now() + 50000),
+      httpOnly: true
+    })
 
-    if(isMatch){
+    // console.log(req.cookies.jwt)
+
+    if (isMatch) {
       res.status(201).render("index")
       console.log("welcome to the homepage successfuly login")
     }
-    else{
+    else {
       res.send(`Passwords are nor noting ${userDatabasePassword} , ${userPassword}`)
     }
   }
